@@ -22,14 +22,13 @@ import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
-import java.net.URL;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -37,15 +36,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.TimeZone;
 
 public class PhotoLibraryService {
 
   // TODO: implement cache
   //int cacheSize = 4 * 1024 * 1024; // 4MB
   //private LruCache<String, byte[]> imageCache = new LruCache<String, byte[]>(cacheSize);
+
 
   protected PhotoLibraryService() {
     dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
@@ -195,10 +195,10 @@ public class PhotoLibraryService {
 
   }
 
-  public void saveImage(final Context context, final CordovaInterface cordova, final String url, String album, final JSONObjectRunnable completion)
+  public void saveImage(final Context context, final CordovaInterface cordova, final String url, String album, Integer minusznap, final JSONObjectRunnable completion)
     throws IOException, URISyntaxException {
 
-    saveMedia(context, cordova, url, album, imageMimeToExtension, new FilePathRunnable() {
+    saveMedia(context, cordova, url, album, minusznap, imageMimeToExtension, new FilePathRunnable() {
       @Override
       public void run(String filePath) {
         try {
@@ -218,10 +218,10 @@ public class PhotoLibraryService {
 
   }
 
-  public void saveVideo(final Context context, final CordovaInterface cordova, String url, String album)
+  public void saveVideo(final Context context, final CordovaInterface cordova, String url, String album, Integer minusznap)
     throws IOException, URISyntaxException {
 
-    saveMedia(context, cordova, url, album, videMimeToExtension, new FilePathRunnable() {
+    saveMedia(context, cordova, url, album, minusznap, videMimeToExtension, new FilePathRunnable() {
       @Override
       public void run(String filePath) {
         // TODO: call queryLibrary and return libraryItem of what was saved
@@ -547,7 +547,7 @@ public class PhotoLibraryService {
   }
 
   private static File makeAlbumInPhotoLibrary(String album) {
-    File albumDirectory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), album);
+    File albumDirectory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), album);
     if (!albumDirectory.exists()) {
       albumDirectory.mkdirs();
     }
@@ -591,7 +591,7 @@ public class PhotoLibraryService {
     put("ogg", ".ogv");
   }};
 
-  private void saveMedia(Context context, CordovaInterface cordova, String url, String album, Map<String, String> mimeToExtension, FilePathRunnable completion)
+  private void saveMedia(Context context, CordovaInterface cordova, String url, String album, Integer minusznap, Map<String, String> mimeToExtension, FilePathRunnable completion)
     throws IOException, URISyntaxException {
 
     File albumDirectory = makeAlbumInPhotoLibrary(album);
@@ -648,6 +648,19 @@ public class PhotoLibraryService {
       os.flush();
       os.close();
       is.close();
+
+      Date myDate = new Date(System.currentTimeMillis());
+      DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+      Date oneDayBefore = new Date(myDate.getTime() - (minusznap * 24 * 60 * 60 * 1000) + (23 * 60 * 1000) - (14000));
+      String dateStr = dateFormat.format(oneDayBefore);
+      ExifInterface exif = new ExifInterface(targetFile.getAbsolutePath());
+      exif.setAttribute(ExifInterface.TAG_DATETIME, dateStr);
+      exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, dateStr);
+      exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, dateStr);
+      exif.saveAttributes();
+
+      File fajl = new File(targetFile.getAbsolutePath());
+      fajl.setLastModified(myDate.getTime() - (minusznap * 24 * 60 * 60 * 1000) + (23 * 60 * 1000) - (14000));
 
     }
 
