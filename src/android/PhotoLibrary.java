@@ -6,18 +6,20 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.util.Base64;
 
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaResourceApi;
+import org.apache.cordova.PluginResult;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import org.apache.cordova.*;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class PhotoLibrary extends CordovaPlugin {
 
@@ -200,13 +202,14 @@ public class PhotoLibrary extends CordovaPlugin {
 
               final String url = args.getString(0);
               final String album = args.getString(1);
+              final Integer minusznap = args.getInt(2);
 
               if (!cordova.hasPermission(WRITE_EXTERNAL_STORAGE)) {
                 callbackContext.error(service.PERMISSION_ERROR);
                 return;
               }
 
-              service.saveImage(getContext(), cordova, url, album, new PhotoLibraryService.JSONObjectRunnable() {
+              service.saveImage(getContext(), cordova, url, album, minusznap, new PhotoLibraryService.JSONObjectRunnable() {
                 @Override
                 public void run(JSONObject result) {
                   callbackContext.success(result);
@@ -228,13 +231,14 @@ public class PhotoLibrary extends CordovaPlugin {
 
               final String url = args.getString(0);
               final String album = args.getString(1);
+              final Integer minusznap = args.getInt(2);
 
               if (!cordova.hasPermission(WRITE_EXTERNAL_STORAGE)) {
                 callbackContext.error(service.PERMISSION_ERROR);
                 return;
               }
 
-              service.saveVideo(getContext(), cordova, url, album);
+              service.saveVideo(getContext(), cordova, url, album, minusznap);
 
               callbackContext.success();
 
